@@ -1,0 +1,12 @@
+# Environment and credentials
+.env
+
+# Vector database
+chroma_db/
+
+# Python caches and virtualenv
+__pycache__/
+.ipynb_checkpoints/
+*.log
+*.py
+.venv/
