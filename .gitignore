@@ -10,3 +10,14 @@ __pycache__/
 *.log
 *.py
 .venv/
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo
+
+# Local environment
+frontend/.env.local
+frontend/.env.*.local
