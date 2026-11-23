@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -5,46 +6,89 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.nutrition import NutritionResult
 from app.schemas.user import UserProfile
 
+class FrontendUserProfile(BaseModel):
+    age: int = Field(..., ge=18, le=100)
+    gender: Literal["male", "female"]
+    height_cm: float = Field(..., ge=100.0, le=250.0)
+    weight_kg: float = Field(..., ge=30.0, le=300.0)
+    activity_level: Literal["sedentary", "light", "moderate", "active", "very_active"]
+    pal: float = Field(default=1.55)
 
-class MealPlanRequest(BaseModel):
-    """Request payload untuk memulai pembuatan meal plan."""
 
-    user_profile: UserProfile
-    duration_days: int = Field(default=7, ge=1, le=30, description="Durasi rencana makan (1–30 hari)")
-    meals_per_day: int = Field(default=3, ge=1, le=5, description="Jumlah waktu makan per hari (1–5)")
+class FrontendPreferences(BaseModel):
+    goal: Literal["weight_loss", "maintenance", "muscle_gain", "lose_weight", "maintain", "gain_muscle"] = "maintenance"
+    duration_days: int = Field(default=7, ge=1, le=30)
+    allergies: list[str] = Field(default_factory=list)
+    food_preferences: list[str] = Field(default_factory=list)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "user_profile": {
-                    "age": 25,
-                    "gender": "male",
-                    "weight_kg": 70.0,
-                    "height_cm": 175.0,
-                    "activity_level": "moderate",
-                    "diet_goal": "maintain",
-                    "allergies": ["udang"],
-                    "preferences": ["ayam"],
-                },
-                "duration_days": 7,
-                "meals_per_day": 3,
-            }
-        }
-    )
+
+class UnifiedMealPlanRequest(BaseModel):
+    """Menerima request dari Frontend dan format legacy dari unit test"""
+    profile: FrontendUserProfile | None = None
+    preferences: FrontendPreferences | None = None
+
+    user_profile: UserProfile | None = None
+    duration_days: int = Field(default=7, ge=1, le=30)
+    meals_per_day: int = Field(default=3, ge=1, le=5)
+
+    model_config = ConfigDict(extra="ignore")
+
+MealPlanRequest = UnifiedMealPlanRequest
+
+class RecipeDetail(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+    prep_time_minutes: int = 20
+    servings: int = 1
+    ingredients: list[str] = Field(default_factory=list)
+    instructions: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
+class NutritionValues(BaseModel):
+    calories_kcal: float
+    protein_g: float
+    carbs_g: float
+    fat_g: float
+
+
+class NutritionSummary(NutritionValues):
+    bmi: float
+    bmi_category: str
+    bmr_kcal: float
+    tdee_kcal: float
+    target_calories_kcal: float
+
+
+class PlannedMeal(BaseModel):
+    meal_type: Literal["breakfast", "lunch", "dinner", "snack"]
+    servings: float
+    recipe: RecipeDetail
+    nutrition: NutritionValues
+
+
+class MealPlanDay(BaseModel):
+    day_number: int
+    meals: list[PlannedMeal]
+    totals: NutritionValues
+
+
+class ValidationSummary(BaseModel):
+    passed: bool
+    warnings: list[str] = Field(default_factory=list)
 
 
 class MealItem(BaseModel):
-    """Satu item hidangan dalam jadwal makan harian."""
-
+    """Kompatibilitas legacy untuk test lama."""
     recipe_id: str
     recipe_name: str
-    servings: float = Field(..., gt=0, le=10)
+    servings: float
     meal_type: Literal["breakfast", "lunch", "dinner", "snack"]
 
 
 class DayPlan(BaseModel):
-    """Rencana menu harian beserta total nutrisi tervalidasi dari database."""
-
+    """Kompatibilitas legacy untuk test lama."""
     day: int
     meals: list[MealItem]
     total_calories: float
@@ -54,11 +98,15 @@ class DayPlan(BaseModel):
 
 
 class MealPlanResponse(BaseModel):
-    """Response hasil generate atau pengambilan meal plan."""
-
+    """Response terpadu yang memenuhi kebutuhan rendering Frontend dan unit test backend lama"""
     plan_id: str
-    user_target: NutritionResult
-    days: list[DayPlan]
-    validation_status: Literal["valid", "adjusted", "failed"]
-    warnings: list[str] = Field(default_factory=list)
+    source: str = "stub"
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    nutrition_summary: NutritionSummary
+    days: list[MealPlanDay]
+    validation: ValidationSummary
 
+    # Field kompatibilitas untuk unit test backend lama
+    user_target: NutritionResult | None = None
+    validation_status: str = "valid"
+    warnings: list[str] = Field(default_factory=list)

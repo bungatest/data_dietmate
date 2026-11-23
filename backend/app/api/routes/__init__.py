@@ -1,4 +1,4 @@
-from app.api.routes import health, mealplan, nutrition
+from app.api.routes import auth, health, mealplan, nutrition
 
-__all__ = ["health", "nutrition", "mealplan"]
+__all__ = ["auth", "health", "nutrition", "mealplan"]
 

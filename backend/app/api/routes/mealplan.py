@@ -3,23 +3,22 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.api.dependencies import get_db
-from app.schemas.mealplan import MealPlanRequest, MealPlanResponse
+from app.schemas.mealplan import MealPlanResponse, UnifiedMealPlanRequest
 from app.services.mealplan_service import generate_meal_plan_stub, get_meal_plan_by_id
 
-router = APIRouter(prefix="/mealplan", tags=["Meal Plan"])
+router = APIRouter(tags=["Meal Plan"])
 
 
 @router.post(
     "/generate",
     response_model=MealPlanResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Generate meal plan personal (stub integrasi RAG/LLM)",
+    summary="Generate meal plan personal",
 )
 async def generate_meal_plan(
-    request: MealPlanRequest,
+    request: UnifiedMealPlanRequest,
     db: Session = Depends(get_db),
 ) -> MealPlanResponse:
-    """Menyusun dan memvalidasi meal plan dari resep database lalu menyimpannya ke PostgreSQL."""
     try:
         return await run_in_threadpool(generate_meal_plan_stub, db, request)
     except LookupError as exc:
@@ -43,7 +42,6 @@ async def get_meal_plan(
     plan_id: str,
     db: Session = Depends(get_db),
 ) -> MealPlanResponse:
-    """Mengambil hasil meal plan yang telah tersimpan di tabel meal_plans PostgreSQL."""
     plan = await run_in_threadpool(get_meal_plan_by_id, db, plan_id)
     if plan is None:
         raise HTTPException(
@@ -51,4 +49,3 @@ async def get_meal_plan(
             detail=f"Meal plan dengan id '{plan_id}' tidak ditemukan.",
         )
     return plan
-
