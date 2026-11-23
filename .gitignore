@@ -1,8 +1,10 @@
-
 # Environment and credentials
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env.local
+frontend/.env.*.local
 
 # Vector database
 chroma_db/
@@ -16,10 +18,15 @@ __pycache__/
 /*.py
 .venv/
 venv/
+backend/.venv/
 
-# Next.js
+# Next.js & Frontend
 node_modules/
+frontend/node_modules/
 .next/
+frontend/.next/
 out/
+frontend/out/
 frontend/next-env.d.ts
 *.tsbuildinfo
+frontend/*.tsbuildinfo
