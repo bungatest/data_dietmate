@@ -1,12 +1,25 @@
+
 # Environment and credentials
 .env
+.env.local
+.env.*.local
 
 # Vector database
 chroma_db/
+rag/chroma_db/
 
-# Python caches and virtualenv
+# Python caches and virtual environments
 __pycache__/
+*.py[cod]
 .ipynb_checkpoints/
 *.log
 /*.py
 .venv/
+venv/
+
+# Next.js
+node_modules/
+.next/
+out/
+frontend/next-env.d.ts
+*.tsbuildinfo
