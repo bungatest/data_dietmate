@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.routes import auth, health, mealplan, nutrition
+from app.api.routes import auth, health, mealplan, nutrition, users
 from app.core.config import settings
 from app.db.database import init_db
 
@@ -43,6 +43,7 @@ app.add_middleware(
 # Parent Router Prefix /api/v1 (Sesuai PRD Section 5.1)
 api_v1 = APIRouter(prefix="/api/v1")
 api_v1.include_router(auth.router)
+api_v1.include_router(users.router)
 api_v1.include_router(nutrition.router)
 api_v1.include_router(mealplan.router, prefix="/meal-plans")
 

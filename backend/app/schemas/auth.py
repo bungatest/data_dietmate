@@ -27,10 +27,14 @@ class AccountProgress(BaseModel):
 class AuthResult(BaseModel):
     user: DietMateUser
     progress: AccountProgress
+    access_token: str
+    token_type: str = "bearer"
 
 
 class RegisterResponse(BaseModel):
     user: DietMateUser
+    access_token: str
+    token_type: str = "bearer"
 
 
 class MessageResponse(BaseModel):

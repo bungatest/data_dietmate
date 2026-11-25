@@ -9,10 +9,14 @@ import {
   getLocalAccountProgress,
   getCurrentUser,
   getMockAccount,
+  getAccessToken,
+  saveAccessToken,
   saveCurrentUser,
   saveMockAccount,
-  clearAuthSession
+  clearAuthSession,
+  clearDietMateSession
 } from "@/lib/storage/session";
+import { hydrateAccountData } from "@/lib/api/profile";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
 const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
@@ -29,6 +33,13 @@ function getMockUser(email: string, name?: string): DietMateUser {
   };
 }
 
+function buildAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
 async function postAuth<T>(path: string, payload?: unknown): Promise<T> {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL belum diatur.");
@@ -38,7 +49,7 @@ async function postAuth<T>(path: string, payload?: unknown): Promise<T> {
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders(),
       credentials: "include",
       body: payload ? JSON.stringify(payload) : undefined,
       cache: "no-store"
@@ -60,12 +71,12 @@ async function postAuth<T>(path: string, payload?: unknown): Promise<T> {
 }
 
 function normalizeAuthResult(
-  result: AuthResult | { user: DietMateUser; onboarding_status?: AccountProgress }
+  result: AuthResult | { user: DietMateUser; onboarding_status?: AccountProgress; access_token?: string }
 ): AuthResult {
   const progress = "progress" in result
     ? result.progress
     : result.onboarding_status ?? getLocalAccountProgress();
-  return { user: result.user, progress };
+  return { user: result.user, progress, access_token: result.access_token };
 }
 
 export async function registerAccount(payload: RegisterPayload): Promise<DietMateUser> {
@@ -76,8 +87,13 @@ export async function registerAccount(payload: RegisterPayload): Promise<DietMat
     user = getMockUser(payload.email, payload.name);
     saveMockAccount(user);
   } else {
-    const result = await postAuth<{ user: DietMateUser }>("/api/v1/auth/register", payload);
+    const result = await postAuth<{ user: DietMateUser; access_token?: string }>(
+      "/api/v1/auth/register",
+      payload
+    );
+    clearDietMateSession();
     user = result.user;
+    if (result.access_token) saveAccessToken(result.access_token);
   }
 
   saveCurrentUser(user);
@@ -102,6 +118,17 @@ export async function loginAccount(payload: LoginPayload): Promise<AuthResult> {
       payload
     );
     result = normalizeAuthResult(response);
+    // Hapus data akun sebelumnya di tab ini agar tidak terbawa ke akun yang baru login.
+    clearDietMateSession();
+    if (result.access_token) saveAccessToken(result.access_token);
+    saveCurrentUser(result.user);
+    try {
+      await hydrateAccountData();
+    } catch (err) {
+      // Login tetap berhasil; data akun akan diisi ulang saat user melengkapi form.
+      console.warn("Gagal memuat data akun dari server:", err);
+    }
+    return result;
   }
 
   saveCurrentUser(result.user);
@@ -109,10 +136,16 @@ export async function loginAccount(payload: LoginPayload): Promise<AuthResult> {
 }
 
 export async function logoutAccount(): Promise<void> {
-  if (!USE_MOCK_API) {
-    await postAuth<{ message?: string }>("/api/v1/auth/logout");
+  try {
+    if (!USE_MOCK_API) {
+      await postAuth<{ message?: string }>("/api/v1/auth/logout");
+    }
+  } finally {
+    // Token stateless: sesi lokal selalu dihapus walaupun request logout gagal.
+    // Mode backend: data akun ada di server, jadi seluruh cache sesi ikut dihapus.
+    if (USE_MOCK_API) clearAuthSession();
+    else clearDietMateSession();
   }
-  clearAuthSession();
 }
 
 export function getRouteAfterLogin(progress: AccountProgress): string {

@@ -3,14 +3,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.nutrition import NutritionResult
-from app.schemas.user import UserProfile
+from app.schemas.nutrition import MealType, NutritionResult
+from app.schemas.user import HeightCm, UserProfile, WeightKg
 
 class FrontendUserProfile(BaseModel):
     age: int = Field(..., ge=18, le=100)
     gender: Literal["male", "female"]
-    height_cm: float = Field(..., ge=100.0, le=250.0)
-    weight_kg: float = Field(..., ge=30.0, le=300.0)
+    height_cm: HeightCm
+    weight_kg: WeightKg
     activity_level: Literal["sedentary", "light", "moderate", "active", "very_active"]
     pal: float = Field(default=1.55)
 
@@ -29,7 +29,6 @@ class UnifiedMealPlanRequest(BaseModel):
 
     user_profile: UserProfile | None = None
     duration_days: int = Field(default=7, ge=1, le=30)
-    meals_per_day: int = Field(default=3, ge=1, le=5)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -62,7 +61,7 @@ class NutritionSummary(NutritionValues):
 
 
 class PlannedMeal(BaseModel):
-    meal_type: Literal["breakfast", "lunch", "dinner", "snack"]
+    meal_type: MealType
     servings: float
     recipe: RecipeDetail
     nutrition: NutritionValues
@@ -84,7 +83,7 @@ class MealItem(BaseModel):
     recipe_id: str
     recipe_name: str
     servings: float
-    meal_type: Literal["breakfast", "lunch", "dinner", "snack"]
+    meal_type: MealType
 
 
 class DayPlan(BaseModel):

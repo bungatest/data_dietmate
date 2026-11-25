@@ -12,6 +12,10 @@ class MealPlan(Base):
     __tablename__ = "meal_plans"
 
     plan_id: Mapped[str] = mapped_column(String(50), primary_key=True, index=True)
+    # Pemilik plan (users.id). Nullable agar data lama & request anonim tetap valid.
+    user_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    # Asal plan: "stub" (generator database) atau "rag" (pipeline LLM)
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="stub", server_default="stub")
     user_profile: Mapped[dict] = mapped_column(JSON, nullable=False)
     user_target: Mapped[dict] = mapped_column(JSON, nullable=False)
     duration_days: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -1,4 +1,5 @@
 import { createMockMealPlan } from "@/lib/mock/meal-plan";
+import { getAccessToken } from "@/lib/storage/session";
 import type {
   GenerateMealPlanRequest,
   MealPlanResponse
@@ -27,11 +28,15 @@ export async function generateMealPlan(
     );
   }
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/api/v1/meal-plans/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
       cache: "no-store"
     });

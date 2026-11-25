@@ -7,6 +7,7 @@ import type { DietMateUser } from "@/types/auth";
 
 const KEYS = {
   currentUser: "dietmate:v1:current-user",
+  accessToken: "dietmate:v1:access-token",
   mockAccount: "dietmate:v1:mock-account",
   profile: "dietmate:v1:profile",
   preferences: "dietmate:v1:preferences",
@@ -37,6 +38,9 @@ function writeValue<T>(key: string, value: T): void {
 export const getCurrentUser = () => readValue<DietMateUser>(KEYS.currentUser);
 export const saveCurrentUser = (value: DietMateUser) =>
   writeValue(KEYS.currentUser, value);
+export const getAccessToken = () => readValue<string>(KEYS.accessToken);
+export const saveAccessToken = (value: string) =>
+  writeValue(KEYS.accessToken, value);
 export const getMockAccount = () => readValue<DietMateUser>(KEYS.mockAccount);
 export const saveMockAccount = (value: DietMateUser) =>
   writeValue(KEYS.mockAccount, value);
@@ -71,6 +75,7 @@ export function getLocalAccountProgress() {
 export function clearAuthSession(): void {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(KEYS.currentUser);
+  window.sessionStorage.removeItem(KEYS.accessToken);
 }
 
 export function clearDietMateSession(): void {

@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { ACTIVITY_OPTIONS } from "@/lib/constants";
 import { calculateNutritionPreview } from "@/lib/nutrition/preview";
+import { saveProfileRemote } from "@/lib/api/profile";
 import { getCurrentUser, getProfile, saveProfile } from "@/lib/storage/session";
 import type { ActivityLevel, Gender, UserProfile } from "@/types/dietmate";
 
@@ -18,6 +19,7 @@ export function ProfileForm() {
   const [gender, setGender] = useState<Gender>("female");
   const [activity, setActivity] = useState<ActivityLevel>("moderate");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!getCurrentUser()) {
@@ -35,8 +37,10 @@ export function ProfileForm() {
 
   const profile = useMemo<UserProfile | null>(() => {
     const ageValue = Number(age);
-    const heightValue = Number(height);
-    const weightValue = Number(weight);
+    // Tinggi dicatat dengan 1 angka di belakang koma (mis. 165.5 cm).
+    const heightValue = Math.round(Number(height) * 10) / 10;
+    // Berat dicatat dengan 2 angka di belakang koma (mis. 58.75 kg).
+    const weightValue = Math.round(Number(weight) * 100) / 100;
     const selectedActivity = ACTIVITY_OPTIONS.find((item) => item.value === activity);
 
     if (
@@ -66,7 +70,7 @@ export function ProfileForm() {
     [profile]
   );
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
@@ -88,7 +92,15 @@ export function ProfileForm() {
     }
 
     saveProfile(profile);
-    router.push("/preferensi");
+    setBusy(true);
+    try {
+      await saveProfileRemote(profile);
+      router.push("/preferensi");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan profil ke server.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -105,6 +117,7 @@ export function ProfileForm() {
                 inputMode="decimal"
                 min="100"
                 max="250"
+                step="0.1"
                 value={height}
                 onChange={(event) => setHeight(event.target.value)}
                 placeholder="165"
@@ -118,6 +131,7 @@ export function ProfileForm() {
                 inputMode="decimal"
                 min="30"
                 max="300"
+                step="0.01"
                 value={weight}
                 onChange={(event) => setWeight(event.target.value)}
                 placeholder="60"
@@ -264,7 +278,7 @@ export function ProfileForm() {
           </p>
         )}
 
-        <PrimaryButton type="submit">
+        <PrimaryButton type="submit" busy={busy}>
           Lanjutkan <Icon name="arrow-right" size={17} />
         </PrimaryButton>
       </form>

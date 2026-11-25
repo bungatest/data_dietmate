@@ -7,9 +7,9 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { Icon } from "@/components/ui/icon";
 import { BottomNavigation } from "@/components/navigation/bottom-navigation";
 import { getCurrentUser, getMealPlan, getProfile } from "@/lib/storage/session";
-import type { MealPlanResponse } from "@/types/dietmate";
+import type { MealPlanResponse, MealType } from "@/types/dietmate";
 
-const MEAL_LABELS = {
+const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "BREAKFAST",
   lunch: "LUNCH",
   dinner: "DINNER"

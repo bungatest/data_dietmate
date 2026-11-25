@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = True
 
+    # Auth: WAJIB diganti di .env untuk deployment (mis. `python -c "import secrets;print(secrets.token_hex(32))"`)
+    SECRET_KEY: str = "dev-insecure-secret-key-change-me"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+
     # CORS (integrasi frontend Next.js)
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 

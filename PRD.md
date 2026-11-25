@@ -247,7 +247,7 @@ flowchart TD
 | 4.1 | **Filtered retrieval** | BE | Implementasi metadata filter di ChromaDB query: filter berdasarkan `kategori`, rentang `kalori_kkal`, exclude alergen — sebelum similarity search. Ini mengurangi beban LLM. |
 | 4.2 | **Multi-query retrieval** | BE | Buat 3 query terpisah per meal slot (sarapan/makan siang/makan malam) agar retrieval lebih terfokus pada jenis makanan yang sesuai. |
 | 4.3 | **Re-ranking** | BE | Setelah retrieval, re-rank berdasarkan: (a) skor kesamaan semantik, (b) kedekatan kalori per porsi dengan target, (c) kecocokan preferensi user, (d) variasi (hindari duplikat). |
-| 4.4 | **Prompt engineering** | BE | Iterasi prompt: tambahkan few-shot examples, instruksi distribusi nutrisi per waktu makan (sarapan ≈25%, makan siang ≈35%, makan malam ≈30%, snack ≈10% dari TDEE). |
+| 4.4 | **Prompt engineering** | BE | Iterasi prompt: tambahkan few-shot examples, instruksi distribusi nutrisi per waktu makan (3 waktu makan tanpa snack: sarapan ≈28%, makan siang ≈39%, makan malam ≈33% dari target kalori). |
 | 4.5 | **Pedoman gizi sebagai konteks** | BE | Sertakan chunk relevan dari `pedoman_gizi` collection sebagai tambahan konteks agar LLM mempertimbangkan Pedoman Gizi Seimbang dan AKG Kemenkes. |
 | 4.6 | **Evaluation framework** | BE + Data | Buat set evaluasi: 20+ skenario user (berbagai profil, alergi, tujuan diet) → bandingkan output RAG vs stub → ukur: validasi pass rate, deviasi nutrisi, variasi resep, waktu respons. |
 

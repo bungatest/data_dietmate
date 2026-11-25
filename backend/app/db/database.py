@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
@@ -26,5 +26,30 @@ def init_db(target_engine=None) -> None:
     """Membuat tabel yang belum ada di database (mis. meal_plans) tanpa menimpa data lama."""
     import app.models  # noqa: F401 - pastikan seluruh model terdaftar di Base.metadata
 
-    Base.metadata.create_all(bind=target_engine or engine, checkfirst=True)
+    bind = target_engine or engine
+    Base.metadata.create_all(bind=bind, checkfirst=True)
+    _add_missing_columns(bind)
+
+
+# Kolom yang ditambahkan setelah tabel pertama kali dibuat. create_all() tidak mengubah
+# tabel yang sudah ada, jadi kolom baru ditambahkan manual (migrasi ringan tanpa Alembic).
+_ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    "meal_plans": {
+        "user_id": "VARCHAR(50)",
+        "source": "VARCHAR(20) NOT NULL DEFAULT 'stub'",
+    },
+}
+
+
+def _add_missing_columns(bind) -> None:
+    inspector = inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+    with bind.begin() as conn:
+        for table, columns in _ADDED_COLUMNS.items():
+            if table not in existing_tables:
+                continue
+            present = {col["name"] for col in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in present:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
 

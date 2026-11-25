@@ -7,12 +7,18 @@ import { AppHeader } from "@/components/ui/app-header";
 import { Icon } from "@/components/ui/icon";
 import { BottomNavigation } from "@/components/navigation/bottom-navigation";
 import { getCurrentUser, getMealPlan, getProfile } from "@/lib/storage/session";
-import type { MealPlanResponse } from "@/types/dietmate";
+import type { MealPlanResponse, MealType } from "@/types/dietmate";
 
-const MEAL_LABELS = {
+const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "Sarapan",
   lunch: "Makan siang",
   dinner: "Makan malam"
+};
+
+const SOURCE_LABELS: Record<MealPlanResponse["source"], string> = {
+  mock: "MODE DEMO",
+  stub: "DATABASE",
+  rag: "AI · RAG"
 };
 
 export function PlanScreen() {
@@ -66,7 +72,7 @@ export function PlanScreen() {
               </p>
             </div>
             <span className="rounded-full bg-white/10 px-3 py-1 text-[9px]">
-              {plan.source === "mock" ? "MODE DEMO" : "RAG"}
+              {SOURCE_LABELS[plan.source] ?? plan.source}
             </span>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/15 pt-3">

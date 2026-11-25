@@ -3,6 +3,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+# Meal plan DietMate hanya memiliki 3 waktu makan per hari.
+MealType = Literal["breakfast", "lunch", "dinner"]
+
+
 class MacroTargets(BaseModel):
     """Target kebutuhan makronutrien harian dalam gram beserta persentase energinya."""
 
@@ -73,7 +77,7 @@ class MealValidationItem(BaseModel):
     recipe_id: str = Field(..., min_length=1)
     recipe_name: str | None = None
     servings: float = Field(..., description="Jumlah porsi; divalidasi > 0 dan <= 10 di service")
-    meal_type: Literal["breakfast", "lunch", "dinner", "snack"] = "lunch"
+    meal_type: MealType = "lunch"
 
 
 class DayValidationInput(BaseModel):

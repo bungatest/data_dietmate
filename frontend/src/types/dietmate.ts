@@ -73,7 +73,8 @@ export interface MealPlanDay {
 
 export interface MealPlanResponse {
   plan_id: string;
-  source: "mock" | "rag";
+  /** mock = data demo frontend, stub = generator database backend (tanpa LLM), rag = pipeline RAG + LLM */
+  source: "mock" | "stub" | "rag";
   generated_at: string;
   nutrition_summary: NutritionSummary;
   days: MealPlanDay[];

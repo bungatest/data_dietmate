@@ -1,12 +1,14 @@
 import hashlib
-import os
+import hmac
 import secrets
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
+from app.core.security import create_access_token
 from app.models.meal_plan import MealPlan
 from app.models.user import User
+from app.models.user_profile import UserProfileRecord
 from app.schemas.auth import (
     AccountProgress,
     AuthResult,
@@ -33,17 +35,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verivikasi Password Pengguna"""
     try:
         salt, _ = hashed_password.split("$", 1)
-        return hash_password(plain_password, salt) == hashed_password
+        return hmac.compare_digest(hash_password(plain_password, salt), hashed_password)
     except ValueError:
         return False
 
 
-def get_user_account_progress(db: Session, email: str) -> AccountProgress:
-    """Cek Riwayat MealPlan User"""
-    has_plan = db.query(MealPlan).first() is not None
+def get_user_account_progress(db: Session, user_id: str) -> AccountProgress:
+    """Status onboarding user berdasarkan tabel user_profiles dan meal_plans."""
+    profile = db.get(UserProfileRecord, user_id)
+    has_plan = db.query(MealPlan.plan_id).filter(MealPlan.user_id == user_id).first() is not None
     return AccountProgress(
-        profile_completed=has_plan,
-        preferences_completed=has_plan,
+        profile_completed=profile is not None,
+        preferences_completed=profile is not None and profile.goal is not None,
         has_meal_plan=has_plan,
     )
 
@@ -76,8 +79,9 @@ def authenticate_user(db: Session, payload: LoginPayload) -> AuthResult:
     if not user or not verify_password(payload.password, user.hashed_password):
         raise ValueError("Email atau kata sandi yang Anda masukkan salah.")
 
-    progress = get_user_account_progress(db, user.email)
+    progress = get_user_account_progress(db, user.id)
     return AuthResult(
         user=DietMateUser(id=user.id, name=user.name, email=user.email),
         progress=progress,
+        access_token=create_access_token(user.id),
     )

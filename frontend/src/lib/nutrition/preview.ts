@@ -26,10 +26,13 @@ export function calculateNutritionPreview(
 
   const tdee = bmr * profile.pal;
 
-  let bmiCategory = "Normal";
-  if (bmi < 18.5) bmiCategory = "Berat badan kurang";
-  else if (bmi < 25) bmiCategory = "Normal";
-  else if (bmi < 30) bmiCategory = "Berat badan berlebih";
+  // Klasifikasi IMT Kemenkes RI, sama dengan backend (BMI_STANDARD=kemenkes,
+  // backend/app/services/bmi_service.py) agar preview dan hasil akhir konsisten.
+  let bmiCategory: string;
+  if (bmi < 17) bmiCategory = "Sangat Kurus";
+  else if (bmi < 18.5) bmiCategory = "Kurus";
+  else if (bmi <= 25) bmiCategory = "Normal";
+  else if (bmi <= 27) bmiCategory = "Gemuk";
   else bmiCategory = "Obesitas";
 
   return {

@@ -27,7 +27,25 @@ ALLERGEN_SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
     ("gluten", "gandum", "wheat", "terigu", "tepung terigu", "roti", "bread", "pasta", "mie", "spaghetti", "pangsit"),
     ("ayam", "chicken"),
     ("sapi", "daging sapi", "beef"),
+    # Kerang-kerangan & krustasea (tanpa ikan) untuk opsi frontend "Tanpa kerang/udang"
+    ("shellfish", "udang", "shrimp", "prawn", "ebi", "cumi", "squid", "kerang", "clam", "kepiting", "crab", "tiram", "oyster", "lobster"),
 )
+
+# Kode alergi yang dikirim frontend (lihat frontend/src/lib/constants.ts ALLERGY_OPTIONS)
+# dipetakan ke istilah alergen kanonik di ALLERGEN_SYNONYM_GROUPS.
+ALLERGY_CODE_ALIASES: dict[str, tuple[str, ...]] = {
+    "nut_free": ("kacang",),
+    "shellfish_free": ("shellfish",),
+    "dairy_free": ("susu",),
+    "gluten_free": ("gluten",),
+}
+
+ALLERGY_CODE_LABELS: dict[str, str] = {
+    "nut_free": "kacang",
+    "shellfish_free": "kerang/udang",
+    "dairy_free": "susu",
+    "gluten_free": "gluten",
+}
 
 
 @dataclass(frozen=True)
@@ -62,9 +80,10 @@ def _expand_allergen_terms(allergen: str) -> set[str]:
     if not normalized:
         return set()
 
-    terms = {normalized}
+    base_terms = set(ALLERGY_CODE_ALIASES.get(normalized, (normalized,)))
+    terms = set(base_terms)
     for group in ALLERGEN_SYNONYM_GROUPS:
-        if normalized in group:
+        if any(term in group for term in base_terms):
             terms.update(group)
     return terms
 
@@ -89,7 +108,7 @@ def find_matching_allergens(recipe: RecipeData, allergies: list[str]) -> list[st
 
         terms = _expand_allergen_terms(clean_allergen)
         if any(re.search(rf"\b{re.escape(term)}\b", haystack) for term in terms):
-            matched.append(clean_allergen)
+            matched.append(ALLERGY_CODE_LABELS.get(clean_allergen.lower(), clean_allergen))
 
     return matched
 

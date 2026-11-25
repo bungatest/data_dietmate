@@ -24,4 +24,6 @@ export interface AccountProgress {
 export interface AuthResult {
   user: DietMateUser;
   progress: AccountProgress;
+  /** Token Bearer dari backend; tidak ada pada mode demo. */
+  access_token?: string;
 }

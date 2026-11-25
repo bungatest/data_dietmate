@@ -11,8 +11,9 @@ import {
   GOAL_OPTIONS
 } from "@/lib/constants";
 import { calculateNutritionPreview } from "@/lib/nutrition/preview";
+import { savePreferencesRemote } from "@/lib/api/profile";
 import { getCurrentUser, getPreferences, getProfile, savePreferences } from "@/lib/storage/session";
-import type { DietGoal, UserProfile } from "@/types/dietmate";
+import type { DietGoal, DietPreferences, UserProfile } from "@/types/dietmate";
 
 export function PreferencesForm() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export function PreferencesForm() {
   const [duration, setDuration] = useState(7);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [foodPreferences, setFoodPreferences] = useState<string[]>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!getCurrentUser()) {
@@ -62,15 +65,25 @@ export function PreferencesForm() {
       : [...current, value]);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    savePreferences({
+    setError("");
+    const preferences: DietPreferences = {
       goal,
       duration_days: duration,
       allergies,
       food_preferences: foodPreferences
-    });
-    router.push("/generating");
+    };
+    savePreferences(preferences);
+    setBusy(true);
+    try {
+      await savePreferencesRemote(preferences);
+      router.push("/generating");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan preferensi ke server.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -239,7 +252,12 @@ export function PreferencesForm() {
         </section>
 
         <div className="sticky bottom-0 -mx-5 border-t border-gray-100 bg-[#F7F9F8]/95 px-5 pb-2 pt-3 backdrop-blur">
-          <PrimaryButton type="submit">
+          {error && (
+            <p role="alert" className="mb-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
+              {error}
+            </p>
+          )}
+          <PrimaryButton type="submit" busy={busy}>
             Buat Meal Plan {duration} Hari <Icon name="sparkles" size={16} />
           </PrimaryButton>
         </div>

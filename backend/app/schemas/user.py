@@ -1,6 +1,20 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+# Berat badan selalu dicatat dengan 2 angka di belakang koma (mis. 58.75 kg).
+WeightKg = Annotated[
+    float,
+    Field(ge=30.0, le=300.0, description="Berat badan dalam kilogram (30–300, 2 desimal)"),
+    AfterValidator(lambda value: round(value, 2)),
+]
+
+# Tinggi badan selalu dicatat dengan 1 angka di belakang koma (mis. 165.5 cm).
+HeightCm = Annotated[
+    float,
+    Field(ge=100.0, le=250.0, description="Tinggi badan dalam sentimeter (100–250, 1 desimal)"),
+    AfterValidator(lambda value: round(value, 1)),
+]
 
 
 class MacroDistribution(BaseModel):
@@ -23,8 +37,8 @@ class UserProfile(BaseModel):
 
     age: int = Field(..., ge=18, le=100, description="Usia pengguna dalam tahun (18–100)")
     gender: Literal["male", "female"] = Field(..., description="Jenis kelamin: 'male' atau 'female'")
-    weight_kg: float = Field(..., ge=30.0, le=300.0, description="Berat badan dalam kilogram (30–300)")
-    height_cm: float = Field(..., ge=100.0, le=250.0, description="Tinggi badan dalam sentimeter (100–250)")
+    weight_kg: WeightKg
+    height_cm: HeightCm
     activity_level: Literal["sedentary", "light", "moderate", "active", "very_active"] = Field(
         ...,
         description="Tingkat aktivitas fisik harian (PAL)",
